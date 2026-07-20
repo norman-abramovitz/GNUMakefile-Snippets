@@ -2,14 +2,19 @@
 # with one target per action, in the style of the cf CLI plugin repos.
 #
 # Try from this directory:
+#   make                     (help is the default goal)
 #   make version
 #   make build
+#   make build PLATFORM=linux/amd64
 #   make bump patch DRYRUN=yes
-#   make security          (scanners must be installed)
+#   make security            (scanners must be installed)
 
 include ../../version.mk
+include ../../platform.mk
 include ../../bump.mk
 include ../../security.mk
+include ../../guards.mk
+include ../../help.mk
 
 PROJECT := example-app
 
@@ -19,23 +24,18 @@ PROJECT := example-app
 
 .DEFAULT_GOAL := help
 
-.PHONY: help version build clean
+.PHONY: version build clean
 
-help:
-	@echo "$(PROJECT) $($(_HIDE)SEMVER_VERSION)"
-	@echo ""
-	@echo "  make version      Print resolved version variables"
-	@echo "  make build        Build (placeholder)"
-	@echo "  make bump <mod>   Bump version (major|minor|patch|final|dev|alpha|beta|rc)"
-	@echo "  make security     Run security scanners"
-	@echo "  make clean        Remove build output"
+##@ Build
 
-version:
-	$(dump.version)
+build: ## Build for the current (or PLATFORM=os/arch) platform
+	@echo "Building $(PROJECT) $($(_HIDE)SEMVER_VERSION) for $($(_HIDE)CURRENT_PLATFORM)..."
+	@echo "  (replace with: $($(_HIDE)GO_ENV) go build ...)"
 
-build:
-	@echo "Building $(PROJECT) $($(_HIDE)SEMVER_VERSION) ($($(_HIDE)BUILD_VCS_ID))..."
-	@echo "  (replace with the real build command)"
-
-clean:
+clean: ## Remove build output
 	@echo "  (replace with the real clean command)"
+
+##@ Introspection
+
+version: ## Print resolved version variables
+	$(dump.version)

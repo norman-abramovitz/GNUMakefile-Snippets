@@ -94,6 +94,49 @@ include security.mk
 
 Knobs: `GOSEC_EXCLUDE` (rule ids), `TRIVY_SEVERITY`, `TRIVY_SCANNERS`.
 
+### platform.mk — host/target platform detection
+
+Lowercased, normalized `HOST_OS`/`HOST_ARCH`, a `PLATFORM=os/arch`
+override parsed into `TARGET_OS`/`TARGET_ARCH`/`CURRENT_PLATFORM`, and
+`GO_ENV` carrying `GOOS=`/`GOARCH=` only for the dimensions that differ
+from the host:
+
+```make
+include platform.mk
+
+build:
+	$($(_HIDE)GO_ENV) go build -o bin/app ./cmd/app
+```
+
+### go-release.mk — cross-compiled Go release fan-out
+
+One release target per `TARGETS` os/arch pair, artifacts named
+`<PROJECT>-<version>+<os>.<arch>[.exe]` with sibling checksum files,
+plus `release-all` / `ci-release` / `show-releases` / `release-clean`.
+The ldflags are a template expanded per target, so per-platform symbols
+work:
+
+```make
+include version.mk
+GO_LDFLAGS      = -X 'main.Version=$($(_HIDE)SEMVER_VERSION)'
+RELEASE_LDFLAGS = $(GO_LDFLAGS) -X 'main.GoOs=$(1)' -X 'main.GoArch=$(2)'
+include go-release.mk
+```
+
+`ci-release` refuses to run unless `VERSION=` was given explicitly on
+the command line — a version resolved by version.mk doesn't count.
+
+### guards.mk — fail-fast recipe prerequisites
+
+`require-%` as a prerequisite fails the build early when a variable is
+missing: `deploy: require-TARGET_ENV`.
+
+### help.mk — self-documenting help
+
+`make help` lists every target annotated with a `## comment`, grouped
+by `##@ Section` headers, scraped from all included makefiles. See
+`examples/classical/` for the annotation style.
+
 ## Examples
 
 - `examples/classical/` — one target per action, plain `make build`,
