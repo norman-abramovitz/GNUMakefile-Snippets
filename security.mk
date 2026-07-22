@@ -6,6 +6,9 @@
 #   make gosec         Go source security scanner (auto-installs)
 #   make trivy         Filesystem vuln + secret scan (install prompted)
 #   make gitleaks      Committed-secret scanner (install prompted)
+#   make modrot        Archived/deprecated Go deps (auto-installs). Needs
+#                      `gh auth token` + network, so it is NOT in the default
+#                      SECURITY_SCANS — run it on its own.
 #
 # Settings:
 #   SECURITY_SCANS     Scanners the aggregate target runs.
@@ -16,17 +19,20 @@
 #                      (e.g. G204,G304). Empty shows all findings.
 #   TRIVY_SCANNERS     Trivy scanner set. Default: vuln,secret
 #   TRIVY_SEVERITY     Trivy severities reported. Default: HIGH,CRITICAL
+#   MODROT_FLAGS       Flags for the modrot scan.
+#                      Default: --recursive --deprecated --resolve
 #
-# govulncheck and gosec are `go install`ed on demand; trivy and gitleaks
-# are system packages, so a missing binary prints install instructions
-# and fails rather than installing behind your back.
+# govulncheck, gosec and modrot are `go install`ed on demand; trivy and
+# gitleaks are system packages, so a missing binary prints install
+# instructions and fails rather than installing behind your back.
 
 SECURITY_SCANS ?= govulncheck trivy gosec gitleaks
 GOSEC_EXCLUDE  ?=
 TRIVY_SCANNERS ?= vuln,secret
 TRIVY_SEVERITY ?= HIGH,CRITICAL
+MODROT_FLAGS   ?= --recursive --deprecated --resolve
 
-.PHONY: security govulncheck trivy gosec gitleaks
+.PHONY: security govulncheck trivy gosec gitleaks modrot
 
 security: $(SECURITY_SCANS)
 
@@ -61,3 +67,10 @@ gitleaks:
 		exit 1; \
 	}
 	gitleaks detect --source . --no-banner --redact
+
+modrot:
+	@command -v modrot >/dev/null 2>&1 || { \
+		echo "Installing modrot..."; \
+		go install github.com/norman-abramovitz/modrot@latest; \
+	}
+	modrot $(MODROT_FLAGS) .
