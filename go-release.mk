@@ -7,6 +7,12 @@
 #   make show-releases       list built artifacts
 #   make release-clean       remove built artifacts
 #
+# Plus the GitHub release lifecycle (tag → publish / unpublish → untag):
+#   make tag [VERSION=vX]    create + push the annotated release tag
+#   make publish [DRAFT=yes] gh release create + upload artifacts
+#   make unpublish TAG=vX    delete the GitHub release (assets included)
+#   make untag TAG=vX        delete the tag (local + remote)
+#
 # Artifacts land in RELEASE_ROOT as
 #   <PROJECT>-<version>+<os>.<arch>[.<meta>][.exe]
 # each with a sibling checksum file (.sha1/.sha256/...).
@@ -87,3 +93,53 @@ release-$(1)/$(2)-$(PROJECT):
 endef
 
 $(foreach target,$(TARGETS),$(eval $(call $(_HIDE)release_target_impl,$(word 1,$(subst /, ,$(target))),$(word 2,$(subst /, ,$(target))))))
+
+# ── Release lifecycle (tag → publish / unpublish → untag) ─────
+# Settings:
+#   TAG          Release tag. Default: the version with build metadata
+#                stripped — tags are clean semver (vX.Y.Z[-prerelease]).
+#   TAG_REMOTE   Remote for tag/untag. Default: origin
+#   DRAFT        DRAFT=yes publishes a draft release.
+#   NOTES        Notes file for publish. Default: gh --generate-notes.
+#   GH_ASSETS    Files publish uploads. Default: RELEASE_ROOT/PROJECT-*
+#                (artifacts + their sibling checksum files).
+#   DRYRUN       DRYRUN=yes echoes state-changing commands instead.
+#
+# gh authenticates from the environment (GH_TOKEN/GITHUB_TOKEN or a
+# prior `gh auth login`) — credentials never appear on a command line.
+# --prerelease derives from any prerelease part in the tag (dev/alpha/
+# beta/rc). Rollback order: unpublish first, then untag, so a half-done
+# rollback never orphans the tag.
+
+TAG        ?= v$($(_HIDE)SEMVER_NOMETA)
+TAG_REMOTE ?= origin
+DRAFT      ?=
+NOTES      ?=
+GH_ASSETS  ?= $(RELEASE_ROOT)/$(PROJECT)-*
+
+# Prefix that turns state-changing commands into echoes under DRYRUN=yes
+$(_HIDE)DRY := $(if $(filter yes,$(DRYRUN)),@echo "DRYRUN:" )
+
+.PHONY: tag untag publish unpublish
+
+tag:
+	@case "$(TAG)" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "ERROR: '$(TAG)' does not look like a release tag (vX.Y.Z[-prerelease])" >&2; exit 1;; esac
+	$($(_HIDE)DRY)git tag -a "$(TAG)" -m "Release $(TAG)"
+	$($(_HIDE)DRY)git push $(TAG_REMOTE) "refs/tags/$(TAG)"
+
+untag:
+	@echo "Deleting tag $(TAG) locally and on $(TAG_REMOTE)..."
+	-$($(_HIDE)DRY)git tag -d "$(TAG)"
+	$($(_HIDE)DRY)git push $(TAG_REMOTE) --delete "refs/tags/$(TAG)"
+
+publish:
+	@TAG="$(TAG)"; \
+	PRERELEASE=""; case "$$TAG" in *-*) PRERELEASE="--prerelease";; esac; \
+	set -- gh release create "$$TAG" --title "$(PROJECT) $$TAG" --verify-tag $$PRERELEASE $(if $(filter yes,$(DRAFT)),--draft) $(if $(NOTES),--notes-file "$(NOTES)",--generate-notes) $(GH_ASSETS); \
+	$(if $(filter yes,$(DRYRUN)),echo "DRYRUN: $$*",echo "+ $$*"; "$$@")
+
+unpublish:
+	@echo "Release to delete from GitHub:"
+	@gh release view "$(TAG)" --json tagName,name,isDraft,assets \
+		--jq '"  " + .tagName + "  (" + .name + ")" + (if .isDraft then "  [draft]" else "" end), (.assets[] | "    " + .name)'
+	$($(_HIDE)DRY)gh release delete "$(TAG)" --yes
