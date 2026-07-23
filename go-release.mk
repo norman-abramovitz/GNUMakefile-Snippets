@@ -107,9 +107,9 @@ $(foreach target,$(TARGETS),$(eval $(call $(_HIDE)release_target_impl,$(word 1,$
 #
 # gh authenticates from the environment (GH_TOKEN/GITHUB_TOKEN or a
 # prior `gh auth login`) — credentials never appear on a command line.
-# --prerelease derives from any prerelease part in the tag (dev/alpha/
-# beta/rc). Rollback order: unpublish first, then untag, so a half-done
-# rollback never orphans the tag.
+# --prerelease derives from an alpha/beta/rc part in the tag — dev.N
+# tags can be full releases. Rollback order: unpublish first, then
+# untag, so a half-done rollback never orphans the tag.
 
 TAG        ?= v$($(_HIDE)SEMVER_NOMETA)
 TAG_REMOTE ?= origin
@@ -134,7 +134,7 @@ untag:
 
 publish:
 	@TAG="$(TAG)"; \
-	PRERELEASE=""; case "$$TAG" in *-*) PRERELEASE="--prerelease";; esac; \
+	PRERELEASE=""; case "$$TAG" in *-alpha*|*-beta*|*-rc*) PRERELEASE="--prerelease";; esac; \
 	set -- gh release create "$$TAG" --title "$(PROJECT) $$TAG" --verify-tag $$PRERELEASE $(if $(filter yes,$(DRAFT)),--draft) $(if $(NOTES),--notes-file "$(NOTES)",--generate-notes) $(GH_ASSETS); \
 	$(if $(filter yes,$(DRYRUN)),echo "DRYRUN: $$*",echo "+ $$*"; "$$@")
 
