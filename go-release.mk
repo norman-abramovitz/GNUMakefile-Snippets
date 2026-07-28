@@ -123,7 +123,13 @@ $(foreach target,$(TARGETS),$(eval $(call $(_HIDE)release_target_impl,$(word 1,$
 # gets fragment-derived notes with no extra arguments, and a repo using
 # neither is unaffected.
 
-TAG           ?= v$($(_HIDE)SEMVER_NOMETA)
+# TAG_PREFIX selects the tag naming scheme. 'v' is the historical default.
+# Set 'v-' in repos whose major version has outrun their Go module path:
+# Go version-parses a 'vN.Y.Z' tag and refuses it when N>=2 without a
+# matching '/vN' module path, but never version-parses 'v-N.Y.Z', so that
+# form stays resolvable as a `go get` revision. version.mk parses both.
+TAG_PREFIX    ?= v
+TAG           ?= $(TAG_PREFIX)$($(_HIDE)SEMVER_NOMETA)
 TAG_REMOTE    ?= origin
 DRAFT         ?=
 NOTES         ?=
