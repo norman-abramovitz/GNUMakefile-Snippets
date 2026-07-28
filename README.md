@@ -94,6 +94,67 @@ include security.mk
 
 Knobs: `GOSEC_EXCLUDE` (rule ids), `TRIVY_SEVERITY`, `TRIVY_SCANNERS`.
 
+That "print instructions" default is right on a workstation and wrong in
+CI, where a plain runner has neither tool and `make security` fails on a
+missing scanner rather than on a finding. `make install-gitleaks` fetches
+a pinned release and verifies it against the project's published
+checksums, so a job can run `make install-gitleaks security` without
+hand-rolling a download step:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0        # gitleaks scans history; depth 1 scans one commit
+- run: make install-gitleaks security
+  env:
+    PATH: ${{ github.workspace }}/bin:${{ env.PATH }}
+```
+
+Pin with `GITLEAKS_VERSION`, relocate with `TOOLS_BIN` (default `./bin`).
+
+### changelog.mk — per-PR release-notes fragments
+
+Each PR drops a fragment in `changelog.d/`; the fragments are assembled
+in section order when a release is cut, then swept. This avoids the two
+problems of a single shared changelog: it is a merge-conflict magnet,
+and one file cannot be both a durable history and the payload for one
+release — publishing it whole repeats every prior release in the new
+release's notes.
+
+```bash
+make changelog-new                 # changelog.d/0007-my-branch.md
+make changelog-check               # CI: reject stubs and malformed files
+make changelog-assemble            # merged notes on stdout
+make changelog-sweep               # after publishing
+```
+
+A fragment names its sections; one file can feed several:
+
+```markdown
+[Features]
+- Added the frobnicator panel.
+
+[BugFixes]
+- Fixed the frobnicator crashing on empty input.
+```
+
+Unknown section names and content above the first header are hard
+errors — a malformed fragment must not silently vanish from a release.
+Order and vocabulary come from `CHANGELOG_SECTIONS`.
+
+Wired to go-release.mk, a release needs no hand-edited notes at all:
+
+```make
+TAG_NOTES_CMD := $(MAKE) --no-print-directory changelog-assemble
+include go-release.mk
+include changelog.mk
+```
+
+`make tag` puts the assembled notes in the annotated tag body and
+`make publish` reads them back with `--notes-from-tag`. Tagging is
+refused outright if there are no fragments, rather than publishing a
+release with empty notes.
+
 ### platform.mk — host/target platform detection
 
 Lowercased, normalized `HOST_OS`/`HOST_ARCH`, a `PLATFORM=os/arch`
@@ -125,6 +186,11 @@ include go-release.mk
 
 `ci-release` refuses to run unless `VERSION=` was given explicitly on
 the command line — a version resolved by version.mk doesn't count.
+
+Release notes come from `NOTES` (a file) when set; otherwise from the
+annotated tag body via `--notes-from-tag` when the tag has one; otherwise
+gh generates them from the commit log. `TAG_NOTES_CMD` is what puts a
+body on the tag — see changelog.mk above.
 
 ### guards.mk — fail-fast recipe prerequisites
 
