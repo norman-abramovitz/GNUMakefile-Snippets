@@ -138,6 +138,43 @@ A fragment names its sections; one file can feed several:
 - Fixed the frobnicator crashing on empty input.
 ```
 
+#### Dependency bumps
+
+Dependabot and Renovate open PRs but never run `changelog-new`, so their
+bumps reach a release only if someone writes them up by hand — and nothing
+reports the omission until the notes come out thin. These read them out of
+the commit log instead, keyed on the subject prefix the bot is configured
+to use:
+
+```bash
+make changelog-deps-check          # how many have landed since the last tag
+make changelog-deps                # draft the fragment from them
+```
+
+`changelog-deps-check` prints the count whether or not anything is missing,
+so it also answers "has enough piled up to be worth a build yet?" between
+releases. It warns and never fails, and is deliberately not wired into
+`changelog-check`: a hard error would fire on pipeline fixes, docs-only
+changes, reverts and the bumps themselves, and a gate with that
+false-positive rate gets routed around rather than obeyed.
+
+`changelog-deps` writes a draft to rewrite into prose — the prose is what
+ships. A security bump usually wants moving to `[Security Updates]` by hand.
+
+Pin the prefix in the bot's own config so the log grep keeps matching. For
+Dependabot:
+
+```yaml
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+```
+
+Override `CHANGELOG_DEPS_GREP` if your bot uses something else, and
+`CHANGELOG_DEPS_SINCE` when the window should not start at the last `v*`
+tag. Both targets see only what has landed on the branch — a bump still in
+an open PR is not counted.
+
 Unknown section names and content above the first header are hard
 errors — a malformed fragment must not silently vanish from a release.
 Order and vocabulary come from `CHANGELOG_SECTIONS`.
