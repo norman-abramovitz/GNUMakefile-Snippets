@@ -37,7 +37,10 @@
 #                      of bumps on one commit (bump dev, bump dev)
 #                      advance correctly, which `git describe` cannot
 #                      do with several tags on the same commit. A
-#                      leading 'v' is preserved onto the new version.
+#                      leading 'v' or 'v-' is preserved onto the new
+#                      version; 'v-' is matched first, since 'v*' also
+#                      matches a 'v-' base and would leave a stray '-'
+#                      that then reads as a prerelease separator.
 #                      No tag at all bumps from 0.0.0. File-versioned
 #                      repos point this at their file, e.g.:
 #                        BUMP_BASE_CMD := cat VERSION
@@ -80,7 +83,10 @@ bump:
 		exit 1; \
 	fi
 	@base=$$($(BUMP_BASE_CMD)); base=$${base:-0.0.0}; \
-	prefix=; case "$$base" in v*) prefix=v; base=$${base#v} ;; esac; \
+	prefix=; case "$$base" in \
+		v-*) prefix=v-; base=$${base#v-} ;; \
+		v*)  prefix=v;  base=$${base#v}  ;; \
+	esac; \
 	base=$${base%%+*}; \
 	core=$${base%%-*}; \
 	pre=; case "$$base" in *-*) pre=$${base#*-} ;; esac; \
