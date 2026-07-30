@@ -19,7 +19,15 @@
 #   CHANGELOG_DEPS_GREP    Commit-subject pattern identifying a dependency
 #                       bump (POSIX basic regex). Default: ^chore(deps
 #   CHANGELOG_DEPS_SINCE   Start of the release window. Default: the
-#                       nearest v* tag, i.e. the last release.
+#                       nearest 'vX.Y.Z' or 'v-X.Y.Z' tag, i.e. the last
+#                       release. Both forms are matched: a repo whose
+#                       major version has outrun its Go module path tags
+#                       releases 'v-X.Y.Z', because Go refuses to resolve
+#                       a 'vN.Y.Z' tag for N>=2 without a matching '/vN'
+#                       module path, but never version-parses the 'v-'
+#                       form. Matching only 'v[0-9]*' there would find no
+#                       tag and silently widen the window to the entire
+#                       history rather than the last release.
 #   CHANGELOG_DEPS_SLUG    Slug for changelog-deps. Default: dependency-updates
 #   CHANGELOG_DEPS_SECTION Section the draft is filed under. Default: Chores
 #
@@ -150,7 +158,7 @@ changelog-check:
 # in it with the prefix stripped, oldest first.
 $(_HIDE)CHANGELOG_DEPS_SCAN = \
 	since='$(CHANGELOG_DEPS_SINCE)'; \
-	[ -n "$$since" ] || since=$$(git describe --tags --match 'v[0-9]*' --abbrev=0 2>/dev/null || true); \
+	[ -n "$$since" ] || since=$$(git describe --tags --match 'v[0-9]*' --match 'v-[0-9]*' --abbrev=0 2>/dev/null || true); \
 	range=$${since:+$$since..}HEAD; \
 	subjects=$$(git log --reverse --no-merges --format='%s' --grep='$(CHANGELOG_DEPS_GREP)' "$$range" -- 2>/dev/null \
 		| sed -E 's/^[^:]*: *(bump )?//I' \
