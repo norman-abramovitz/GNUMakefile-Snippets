@@ -1,0 +1,22 @@
+# Makefile — this repo versions and tests itself with its own snippets.
+_HIDE ?= _
+
+include snippets/version.mk
+include snippets/bump.mk
+include snippets/changelog.mk
+include snippets/guards.mk
+include snippets/help.mk
+
+.DEFAULT_GOAL := help
+
+.PHONY: test lint
+
+##@ Development
+
+test: ## Run the shell test suite
+	@tests/run-tests.sh
+
+lint: ## shellcheck every shell component
+	@files=$$(ls snippets/*.sh 2>/dev/null); \
+	if [ -z "$$files" ]; then echo "lint: no scripts yet"; exit 0; fi; \
+	shellcheck $$files && echo "lint: OK"
