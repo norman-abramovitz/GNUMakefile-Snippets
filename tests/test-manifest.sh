@@ -14,7 +14,7 @@ grep -q '^# origin: example/upstream$' "$MF" || fail "origin header"
 grep -q '^# tree: snippets/$' "$MF" || fail "tree header"
 grep -q '  a.mk$' "$MF" || fail "a.mk entry"
 grep -q '  b.sh$' "$MF" || fail "b.sh entry"
-grep -q 'snippets.sha256' "$MF" && fail "manifest lists itself"
+grep -q '  snippets.sha256$' "$MF" && fail "manifest lists itself"
 
 # stock tool verifies the generated file
 (cd "$FIX/tree" && \
