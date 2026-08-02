@@ -14,6 +14,36 @@ All snippets require GNU make. They share two conventions:
 - `DRYRUN=yes` previews instead of acting, in every snippet that
   mutates anything.
 
+## Vendoring and staying current
+
+Every vendorable file lives under `snippets/`, described by
+`snippets/snippets.sha256` — checksums verifiable with stock tools
+(`shasum -a 256 -c snippets.sha256`) plus per-file provenance the
+tooling maintains. The manifest, not the single file, is the unit of
+integrity: vendor the tree, mount it anywhere (e.g. `mk/snippets/`).
+
+Bootstrap:
+
+    mkdir -p mk && cd mk
+    curl -fsSL https://github.com/norman-abramovitz/GNUMakefile-Snippets/archive/refs/tags/v-1.0.0.tar.gz \
+        | tar -xz --strip-components=1 '*/snippets'
+    printf 'include mk/snippets/snippets.mk\n' >> ../Makefile   # or your layout
+    cd .. && make snippets-pin SNIPPETS_TAG=v-1.0.0             # stamp provenance
+
+Afterwards:
+
+| Target | Question it answers |
+|---|---|
+| `make snippets-status` | Is anything stale, edited, or diverged? (CI-friendly: exit 1 on drift) |
+| `make snippets-report` | What exactly changed, both sides, in prose? |
+| `make snippets-merge` | Bring upstream's changes in (three-way; conflicts get markers) |
+| `make snippets-patch` | Extract my local improvements for an upstream PR |
+| `make snippets-pin` | Identify a copy of unknown origin |
+
+`DRYRUN=yes` previews any mutation. `SNIPPETS_OFFLINE=yes` keeps status
+off the network. If you use these snippets, consider adding your repo to
+[CONSUMERS.md](CONSUMERS.md).
+
 ## Snippets
 
 ### version.mk — semver resolution and build metadata
