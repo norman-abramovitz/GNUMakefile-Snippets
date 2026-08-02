@@ -8,7 +8,7 @@
 # fragment must not silently vanish from a release's notes. No fragments:
 # empty output, success.
 # Exit: 0, 1 malformed fragment, 2 usage.
-set -u
+set -eu
 dir=changelog.d
 sections='Breaking Changes|Features|BugFixes|Chores|Security Updates'
 while getopts d:S: opt; do
