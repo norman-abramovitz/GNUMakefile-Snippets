@@ -30,6 +30,7 @@ done
 tmp=$(mktemp "$dir/snippets.sha256.XXXXXX") || sl_die "mktemp failed in $dir"
 trap 'rm -f "$tmp"' EXIT
 {
+    echo "# snippets.sha256 — vendored-snippet lifecycle manifest"
     echo "# origin: $origin"
     echo "# tree: $tree"
     echo

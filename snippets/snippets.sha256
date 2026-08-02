@@ -1,3 +1,4 @@
+# snippets.sha256 — vendored-snippet lifecycle manifest
 # origin: norman-abramovitz/GNUMakefile-Snippets
 # tree: snippets/
 
@@ -11,7 +12,7 @@ e464227075dacedbdd8e55ea6cc00cb8e464fece25d7ad38e37efe58a6fddea1  help.mk
 bf2a3926d58a38da1ef0c5efe3b1aeecf50ce10a8700a7e4a09f6ba474002cd2  security.mk
 abe467f62d232be627d74588e74aa850f01eaefc93c7e43c4e16d5d81c78f4cf  snippets-fetch.sh
 8b6378c986a953890c0b5ff8066c4f8cb14d3e24e02641cd6f01a0f96c5a66ad  snippets-lib.sh
-facd92687847f60e9c65fb2ef4e6efc36add31b3acbb651726526ebae393d16e  snippets-manifest.sh
+aaaecc809c5766534332941f31ee57ea316815d25cbd3631f6731f49869d9615  snippets-manifest.sh
 29a13d9fec65dcb5bd8867a569867a26fbf621f4d71ba36912ef14fce397ee98  snippets-merge.sh
 a9b527a155cc3889ddae95f0192273815ae35c020dd8d43c29ab4e2ec495c66a  snippets-patch.sh
 3a6723a771a5564d2dacee604b26aaad0d0bcd638ba8bd7038a86154ed729951  snippets-pin.sh
