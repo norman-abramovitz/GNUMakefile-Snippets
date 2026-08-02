@@ -16,6 +16,10 @@ grep -q '  a.mk$' "$MF" || fail "a.mk entry"
 grep -q '  b.sh$' "$MF" || fail "b.sh entry"
 grep -q '  snippets.sha256$' "$MF" && fail "manifest lists itself"
 
+# mktemp leaves 0600; the generated manifest should be normally readable
+mode=$(stat -f '%Lp' "$MF" 2>/dev/null || stat -c '%a' "$MF" 2>/dev/null)
+[ "$mode" = "644" ] || fail "manifest mode after generate: $mode"
+
 # stock tool verifies the generated file
 (cd "$FIX/tree" && \
     { sha256sum -c snippets.sha256 2>/dev/null || shasum -a 256 -c snippets.sha256 2>/dev/null; } \

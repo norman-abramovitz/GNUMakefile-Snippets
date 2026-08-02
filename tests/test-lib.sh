@@ -41,6 +41,10 @@ row=$(sl_entry "$M" demo.mk)
 [ "$(printf '%s' "$row" | cut -f4)" = "v-0.2.0" ]  || fail "updated tag"
 [ "$(sl_entries "$M" | wc -l | tr -d ' ')" = "1" ] || fail "duplicate entry after update"
 
+# mktemp leaves 0600; sl_update_entry restores a normal, readable mode
+mode=$(stat -f '%Lp' "$M" 2>/dev/null || stat -c '%a' "$M" 2>/dev/null)
+[ "$mode" = "644" ] || fail "manifest mode after update: $mode"
+
 # Append when untracked
 sl_update_entry "$M" extra.sh "$newsha" "$newrev" v-0.2.0 2026-08-02
 [ "$(sl_entries "$M" | wc -l | tr -d ' ')" = "2" ] || fail "append"

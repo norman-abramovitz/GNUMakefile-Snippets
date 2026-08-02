@@ -61,4 +61,13 @@ sl_update_entry "$M" other.mk "$(sl_sha256 "$FIX/consumer/mk/snippets/other.mk")
 rc=0; status -m "$M" -o > "$FIX/s" || rc=$?
 grep -q 'mixed revs' "$FIX/s" || fail "mixed revs not reported"
 
+# one real pinned rev plus one 'unknown' (unpinned) file must not
+# misreport as vendored from "2 different upstream commits" - 'unknown'
+# means "no provenance", not "a second distinct commit"
+make_consumer
+cp "$FIX/consumer/mk/snippets/demo.mk" "$FIX/consumer/mk/snippets/other2.mk"
+sl_update_entry "$M" other2.mk "$(sl_sha256 "$FIX/consumer/mk/snippets/other2.mk")" unknown - -
+status -m "$M" -o > "$FIX/s" || true
+grep -q 'mixed revs' "$FIX/s" && fail "unpinned 'unknown' file counted as a distinct upstream rev"
+
 echo ok

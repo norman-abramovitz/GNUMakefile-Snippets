@@ -71,4 +71,7 @@ sl_update_entry() {
         END { if (!done) { printf "\n"; emit() } }
     ' "$1" > "$_tmp" && mv "$_tmp" "$1" \
         || { rm -f "$_tmp"; sl_die "manifest write failed: $1"; }
+    # mktemp made this 0600; best-effort restore to a normal, readable
+    # mode - a failure here doesn't undo the write.
+    chmod 644 "$1" 2>/dev/null || true
 }

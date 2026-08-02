@@ -54,6 +54,10 @@ elif sl_dryrun; then
     echo "DRYRUN: would write $dir/snippets.sha256"
 else
     mv "$tmp" "$dir/snippets.sha256"
+    # mktemp made this 0600; a manifest is meant to be readable like any
+    # other vendored file. Best-effort - a failure here doesn't undo the
+    # write.
+    chmod 644 "$dir/snippets.sha256" 2>/dev/null || true
     trap - EXIT
     echo "wrote $dir/snippets.sha256"
 fi
