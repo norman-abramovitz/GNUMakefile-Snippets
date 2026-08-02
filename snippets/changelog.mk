@@ -51,6 +51,10 @@
 #     [BugFixes]
 #     - Fixed the frobnicator crashing on empty input.
 
+# Path of this .mk's directory, captured at include time (MAKEFILE_LIST
+# grows with every later include).
+$(_HIDE)CHANGELOG_SH := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
 CHANGELOG_DIR      ?= changelog.d
 CHANGELOG_SLUG     ?=
 CHANGELOG_SECTIONS ?= Breaking Changes|Features|BugFixes|Chores|Security Updates
@@ -71,61 +75,12 @@ CHANGELOG_DEPS_SECTION ?= Chores
 $(_HIDE)CHANGELOG_FIND = find "$(CHANGELOG_DIR)" -maxdepth 1 -name '[0-9]*.md' 2>/dev/null | LC_ALL=C sort
 
 changelog-new:
-	@set -e; \
-	dir="$(CHANGELOG_DIR)"; \
-	slug="$(CHANGELOG_SLUG)"; \
-	[ -n "$$slug" ] || slug=$$(git branch --show-current 2>/dev/null || true); \
-	slug=$$(printf '%s' "$$slug" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$$//'); \
-	if [ -z "$$slug" ]; then \
-		echo "ERROR: empty slug (detached HEAD?) - pass one: make changelog-new CHANGELOG_SLUG=<slug>" >&2; \
-		exit 1; \
-	fi; \
-	mkdir -p "$$dir"; \
-	max=0; \
-	for f in $$($($(_HIDE)CHANGELOG_FIND)); do \
-		n=$$(basename "$$f"); n=$$(( 10#$${n%%-*} )); \
-		[ "$$n" -gt "$$max" ] && max=$$n || true; \
-	done; \
-	file=$$(printf '%s/%04d-%s.md' "$$dir" $$((max + 1)) "$$slug"); \
-	if [ -e "$$file" ]; then echo "ERROR: $$file already exists" >&2; exit 1; fi; \
-	printf '[Features]\n- \n' > "$$file"; \
-	echo "$$file"
+	@sh '$($(_HIDE)CHANGELOG_SH)/changelog-new.sh' -d '$(CHANGELOG_DIR)' \
+		$(if $(CHANGELOG_SLUG),-s '$(CHANGELOG_SLUG)')
 
-# Merges every fragment into one document, section by section, in
-# CHANGELOG_SECTIONS order. An unknown section name or content sitting
-# above the first [Section] header is a hard error: a malformed fragment
-# must not silently vanish from a release's notes.
 changelog-assemble:
-	@set -e; \
-	files=$$($($(_HIDE)CHANGELOG_FIND)); \
-	[ -n "$$files" ] || exit 0; \
-	awk -v order='$(CHANGELOG_SECTIONS)' ' \
-	BEGIN { norder = split(order, sections, "|"); for (i = 1; i <= norder; i++) valid[sections[i]] = 1 } \
-	FNR == 1 { section = ""; delete pending } \
-	/^\[[^]]+\][[:space:]]*$$/ { \
-		s = $$0; sub(/^\[/, "", s); sub(/\][[:space:]]*$$/, "", s); \
-		if (!(s in valid)) { printf "ERROR: %s: unknown section [%s]\n", FILENAME, s > "/dev/stderr"; err = 1; exit 1 } \
-		section = s; delete pending; next \
-	} \
-	{ \
-		if (section == "") { \
-			if ($$0 ~ /^[[:space:]]*$$/) next; \
-			printf "ERROR: %s: content before any [Section] header\n", FILENAME > "/dev/stderr"; err = 1; exit 1 \
-		} \
-		if ($$0 ~ /^[[:space:]]*$$/) { pending[section] = pending[section] "\n"; next } \
-		buf[section] = buf[section] pending[section] $$0 "\n"; delete pending[section] \
-	} \
-	END { \
-		if (err) exit 1; \
-		for (i = 1; i <= norder; i++) { \
-			s = sections[i]; b = buf[s]; \
-			sub(/^\n+/, "", b); sub(/\n+$$/, "\n", b); \
-			if (b !~ /[^[:space:]]/) continue; \
-			if (out) printf "\n"; \
-			printf "[%s]\n%s", s, b; out = 1 \
-		} \
-	} \
-	' $$files
+	@sh '$($(_HIDE)CHANGELOG_SH)/changelog-assemble.sh' -d '$(CHANGELOG_DIR)' \
+		-S '$(CHANGELOG_SECTIONS)'
 
 # Guard for CI: catches the stub fragment `make changelog-new` writes,
 # which is easy to add and forget to fill in.
