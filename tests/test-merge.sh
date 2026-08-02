@@ -50,10 +50,31 @@ cmp -s "$F" "$FIX/before" || fail "fallback touched the file"
 # DRYRUN previews, changes nothing
 make_consumer
 cp "$F" "$FIX/before"
-DRYRUN=yes merge -m "$M" > "$FIX/out" || fail "dryrun exit"
+# Subshell-scoped: /bin/sh on macOS (bash in POSIX mode) leaks a var
+# prefix assigned on a shell FUNCTION call into the rest of the script,
+# unlike a real dash - a bare `DRYRUN=yes merge ...` would leave DRYRUN
+# set for every later test in this file.
+(DRYRUN=yes merge -m "$M") > "$FIX/out" || fail "dryrun exit"
 grep -q 'DRYRUN' "$FIX/out" || fail "no dryrun preview"
 cmp -s "$F" "$FIX/before" || fail "dryrun touched the file"
 [ "$(printf '%s' "$(sl_entry "$M" demo.mk)" | cut -f4)" = "v-0.1.0" ] \
     || fail "dryrun touched the manifest"
+
+# target file is git-tracked with uncommitted local edits: merge warns
+# (stderr) that pre-merge content won't be recoverable from history, but
+# still completes the merge - warning only, never a block.
+make_consumer
+(cd "$FIX/consumer" && $GIT init -q . && $GIT add -A && $GIT commit -qm vendor)
+edit_local "$F"
+merge -m "$M" > "$FIX/out" 2> "$FIX/err" || true
+grep -q 'uncommitted changes in git' "$FIX/err" || fail "no dirty-git warning: $(cat "$FIX/err")"
+grep -q 'demo.mk: merged' "$FIX/out" || fail "dirty-git merge should still succeed: $(cat "$FIX/out")"
+rm -rf "$FIX/consumer/.git"
+
+# non-git consumer: identical edit, no repo present - no warning at all
+make_consumer
+edit_local "$F"
+merge -m "$M" > "$FIX/out" 2> "$FIX/err" || true
+grep -q 'uncommitted changes in git' "$FIX/err" && fail "warned for non-git consumer"
 
 echo ok
