@@ -6,6 +6,7 @@ include snippets/bump.mk
 include snippets/changelog.mk
 include snippets/guards.mk
 include snippets/help.mk
+include snippets/snippets.mk
 
 .DEFAULT_GOAL := help
 
@@ -20,3 +21,11 @@ lint: ## shellcheck every shell component
 	@files=$$(ls snippets/*.sh 2>/dev/null); \
 	if [ -z "$$files" ]; then echo "lint: no scripts yet"; exit 0; fi; \
 	shellcheck $$files && echo "lint: OK"
+
+manifest: ## Regenerate snippets/snippets.sha256
+	@sh snippets/snippets-manifest.sh
+
+manifest-check: ## Fail if the shipped manifest is stale
+	@sh snippets/snippets-manifest.sh -c
+
+release-check: manifest-check changelog-check ## Gate: run before tagging
