@@ -29,3 +29,8 @@ manifest-check: ## Fail if the shipped manifest is stale
 	@sh snippets/snippets-manifest.sh -c
 
 release-check: manifest-check changelog-check ## Gate: run before tagging
+
+# bump.mk (vendored, not edited here) tags directly with no gate of its
+# own. Wire the release gate in on this side so `make bump ...` refuses
+# to mint a tag while the manifest or changelog is stale.
+bump: release-check
