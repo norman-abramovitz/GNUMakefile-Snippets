@@ -5,7 +5,7 @@
 #
 # Slug defaults to the current git branch, sanitized to [a-z0-9-].
 # Exit: 0 created, 2 empty slug or path collision.
-set -u
+set -eu
 dir=changelog.d; slug=
 while getopts d:s: opt; do
     case $opt in d) dir=$OPTARG ;; s) slug=$OPTARG ;; *) exit 2 ;; esac

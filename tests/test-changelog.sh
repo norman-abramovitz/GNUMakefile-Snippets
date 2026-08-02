@@ -28,4 +28,14 @@ rm -rf changelog.d
 sh "$SNIP/changelog-assemble.sh" > "$FIX/notes" || fail "empty exit"
 [ ! -s "$FIX/notes" ] || fail "empty dir should print nothing"
 
+# unwritable target dir: set -e turns this into a real failure instead
+# of the old false success (mkdir -p silently failed, a path still got
+# printed, exit 0)
+mkdir "$FIX/locked" && chmod 555 "$FIX/locked"
+rc=0
+out=$(sh "$SNIP/changelog-new.sh" -d "$FIX/locked/sub" 2>/dev/null) || rc=$?
+chmod 755 "$FIX/locked"
+[ "$rc" -ne 0 ] || fail "unwritable dir should fail, not exit 0"
+[ -z "$out" ] || fail "unwritable dir printed a path: $out"
+
 echo ok
