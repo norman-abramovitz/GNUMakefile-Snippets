@@ -76,6 +76,12 @@ while IFS="$tab" read -r path sha rev tag ven; do
         echo "DRYRUN: would merge $path: $tag ($rev) -> $utag ($urev)"
         continue
     fi
+    # Non-git consumers are silently fine: rev-parse fails, the warning
+    # is skipped, nothing else changes.
+    if git -C "$mdir" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+        && [ -n "$(git -C "$mdir" status --porcelain -- "$path" 2>/dev/null)" ]; then
+        sl_warn "$path: has uncommitted changes in git - pre-merge content is not recoverable from history"
+    fi
     cp "$f" "$tmp/work"
     conflicts=0
     git merge-file -L "$path (local)" -L "$path ($tag)" -L "$path ($utag)" \
