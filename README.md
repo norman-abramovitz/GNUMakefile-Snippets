@@ -25,11 +25,11 @@ integrity: vendor the tree, mount it anywhere (e.g. `mk/snippets/`).
 Bootstrap:
 
     mkdir -p mk/.tmp && cd mk/.tmp
-    curl -fsSL https://github.com/norman-abramovitz/GNUMakefile-Snippets/archive/refs/tags/v-1.0.0.tar.gz \
+    curl -fsSL https://github.com/norman-abramovitz/GNUMakefile-Snippets/archive/refs/tags/v-0.1.0.tar.gz \
         | tar -xz
     mv */snippets .. && cd .. && rm -rf .tmp
     printf 'include mk/snippets/snippets.mk\n' >> ../Makefile   # or your layout
-    cd .. && make snippets-pin SNIPPETS_TAG=v-1.0.0             # stamp provenance
+    cd .. && make snippets-pin SNIPPETS_TAG=v-0.1.0             # stamp provenance
 
 Afterwards:
 
