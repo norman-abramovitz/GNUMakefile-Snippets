@@ -22,7 +22,7 @@ Resolves a version string into overridable `SEMVER_*` parts plus VCS
 and date metadata, for stamping into binaries and build info files.
 
 ```make
-include version.mk
+include snippets/version.mk
 
 build:
 	go build -ldflags "-X main.version=$($(_HIDE)SEMVER_VERSION)"
@@ -34,7 +34,7 @@ nearest git tag, strips a leading `v`, and increments the patch number
 
 ```make
 VERSION_CMD := node -p "require('./package.json').version"
-include version.mk
+include snippets/version.mk
 ```
 
 `VERSION=x.y.z` on the command line overrides everything. Unresolvable
@@ -72,7 +72,7 @@ repos point both at their file:
 ```make
 BUMP_BASE_CMD     := cat VERSION
 VERSION_WRITE_CMD := ./scripts/write-version
-include bump.mk
+include snippets/bump.mk
 ```
 
 Note the division of labor with version.mk: version.mk *reads* ("what
@@ -89,7 +89,7 @@ the set:
 
 ```make
 SECURITY_SCANS := trivy gitleaks
-include security.mk
+include snippets/security.mk
 ```
 
 Knobs: `GOSEC_EXCLUDE` (rule ids), `TRIVY_SEVERITY`, `TRIVY_SCANNERS`.
@@ -183,8 +183,8 @@ Wired to go-release.mk, a release needs no hand-edited notes at all:
 
 ```make
 TAG_NOTES_CMD := $(MAKE) --no-print-directory changelog-assemble
-include go-release.mk
-include changelog.mk
+include snippets/go-release.mk
+include snippets/changelog.mk
 ```
 
 `make tag` puts the assembled notes in the annotated tag body and
@@ -200,7 +200,7 @@ override parsed into `TARGET_OS`/`TARGET_ARCH`/`CURRENT_PLATFORM`, and
 from the host:
 
 ```make
-include platform.mk
+include snippets/platform.mk
 
 build:
 	$($(_HIDE)GO_ENV) go build -o bin/app ./cmd/app
@@ -215,10 +215,10 @@ The ldflags are a template expanded per target, so per-platform symbols
 work:
 
 ```make
-include version.mk
+include snippets/version.mk
 GO_LDFLAGS      = -X 'main.Version=$($(_HIDE)SEMVER_VERSION)'
 RELEASE_LDFLAGS = $(GO_LDFLAGS) -X 'main.GoOs=$(1)' -X 'main.GoArch=$(2)'
-include go-release.mk
+include snippets/go-release.mk
 ```
 
 `ci-release` refuses to run unless `VERSION=` was given explicitly on

@@ -9,12 +9,12 @@
 #   make bump patch DRYRUN=yes
 #   make security            (scanners must be installed)
 
-include ../../version.mk
-include ../../platform.mk
-include ../../bump.mk
-include ../../security.mk
-include ../../guards.mk
-include ../../help.mk
+include ../../snippets/version.mk
+include ../../snippets/platform.mk
+include ../../snippets/bump.mk
+include ../../snippets/security.mk
+include ../../snippets/guards.mk
+include ../../snippets/help.mk
 
 PROJECT := example-app
 

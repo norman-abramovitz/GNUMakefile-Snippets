@@ -11,8 +11,8 @@
 #   make build nonsense    unknown-modifier warning
 #   make _HIDE= build      debug: expose hidden names
 
-include ../../version.mk
-include ../../actions.mk
+include ../../snippets/version.mk
+include ../../snippets/actions.mk
 
 # ── 1. Vocabulary ────────────────────────────────────────────
 $(call modifier,app)
