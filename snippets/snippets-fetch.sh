@@ -21,8 +21,32 @@ shift $((OPTIND - 1))
 origin=$(sl_header "$manifest" origin)
 tree=$(sl_header "$manifest" tree)
 
-# Portable "highest vX.Y.Z" sort (no GNU sort -V): strip prefix, sort numerically.
-semver_max() { sed 's/^v-//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1; }
+# Portable "highest vX.Y.Z[-pre]" sort (no GNU sort -V). Semver ranks a
+# prerelease BELOW its own release (1.2.0-dev.1 < 1.2.0) — the opposite
+# of a naive numeric-tie/whole-line compare, which is why the old version
+# of this picked the prerelease: same x.y.z numeric key, and the longer
+# (prerelease) line then won the whole-line tiebreak.
+#
+# Key per candidate: major, minor, patch (numeric fields, so 10 sorts
+# after 9), then "is a bare release" (1 for a release, 0 for a
+# prerelease), then the raw prerelease string as a last tiebreak.
+# Sorting "is a bare release" ascending puts any prerelease before its
+# own release when x.y.z ties, so `tail -1` (highest) lands on the
+# release. Proved by:
+#   1.2.0-dev.1 vs 1.2.0        -> 1.2.0 wins (release outranks its prerelease)
+#   1.2.0-dev.1 vs 1.1.0        -> 1.2.0-dev.1 wins (prerelease outranks a lower release)
+#   1.9.0       vs 1.10.0       -> 1.10.0 wins (numeric field compare, not lexical)
+semver_max() {
+    sed 's/^v-//' | awk -F- '
+        {
+            split($1, v, ".")
+            hasrel = (index($0, "-") == 0) ? 1 : 0
+            rest = $0; sub(/^[^-]*-?/, "", rest)
+            printf "%d\t%d\t%d\t%d\t%s\t%s\n", v[1]+0, v[2]+0, v[3]+0, hasrel, rest, $0
+        }' \
+    | sort -k1,1n -k2,2n -k3,3n -k4,4n -k5,5 \
+    | tail -1 | cut -f6
+}
 
 cmd=${1:-}
 case $cmd in
