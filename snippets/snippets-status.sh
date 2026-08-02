@@ -81,7 +81,7 @@ while IFS="$tab" read -r path sha rev tag ven; do
     case $state in current|clean) ;; *) drift=1 ;; esac
 done < "$tmp/entries"
 
-nrev=$(cut -f3 "$tmp/entries" | grep -v '^-$' | sort -u | wc -l | tr -d ' ')
+nrev=$(cut -f3 "$tmp/entries" | grep -vE '^(-|unknown)$' | sort -u | wc -l | tr -d ' ')
 if [ "$nrev" -gt 1 ]; then
     echo "note: mixed revs across files - vendored from $nrev different upstream commits"
     drift=1
