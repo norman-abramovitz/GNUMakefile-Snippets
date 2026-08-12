@@ -160,7 +160,7 @@ $(_HIDE)PUBLISH_TAG = $(or $(TAG),$($(_HIDE)LAST_TAG))
 .PHONY: tag untag publish unpublish
 
 tag:
-	@case "$($(_HIDE)CREATE_TAG)" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "ERROR: '$($(_HIDE)CREATE_TAG)' does not look like a release tag (vX.Y.Z[-prerelease])" >&2; exit 1;; esac
+	@case "$($(_HIDE)CREATE_TAG)" in $(TAG_PREFIX)[0-9]*.[0-9]*.[0-9]*) ;; *) echo "ERROR: '$($(_HIDE)CREATE_TAG)' does not look like a release tag ($(TAG_PREFIX)X.Y.Z[-prerelease])" >&2; exit 1;; esac
 ifeq ($(strip $(TAG_NOTES_CMD)),)
 	$($(_HIDE)DRY)git tag -a "$($(_HIDE)CREATE_TAG)" -m "Release $($(_HIDE)CREATE_TAG)"
 else
