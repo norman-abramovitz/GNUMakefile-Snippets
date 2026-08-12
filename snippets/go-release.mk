@@ -153,7 +153,12 @@ $(_HIDE)DRY := $(if $(filter yes,$(DRYRUN)),@echo "DRYRUN:" )
 # earlier in the same invocation. Both stay recursive on purpose — see
 # version.mk on why := would freeze pre-bump values.
 $(_HIDE)NEXT_TAG    = $(TAG_PREFIX)$($(_HIDE)SEMVER_NOMETA)
-$(_HIDE)LAST_TAG    = $(shell git describe --tags --abbrev=0 2>/dev/null)
+# Constrained to the release-tag family, otherwise the nearest tag of any
+# kind wins and publish targets whatever happened to be tagged last -- a
+# nightly, a checkpoint, a submodule marker. Derived from TAG_PREFIX so
+# publish looks for exactly the family tag creates, rather than a second
+# knob to keep in step (bump.mk carries its own, BUMP_TAG_MATCH).
+$(_HIDE)LAST_TAG    = $(shell git describe --tags --match '$(TAG_PREFIX)[0-9]*' --abbrev=0 2>/dev/null)
 $(_HIDE)CREATE_TAG  = $(or $(TAG),$($(_HIDE)NEXT_TAG))
 $(_HIDE)PUBLISH_TAG = $(or $(TAG),$($(_HIDE)LAST_TAG))
 
