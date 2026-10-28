@@ -143,6 +143,13 @@ hand-rolling a download step:
 
 Pin with `GITLEAKS_VERSION`, relocate with `TOOLS_BIN` (default `./bin`).
 
+`make codeql` runs CodeQL over Go code with the same
+`go-code-scanning` suite `github/codeql-action` uses (`CODEQL_SUITE`),
+prints any findings, and fails on them. It needs the CodeQL CLI
+(`brew install --cask codeql`) and is not in the default
+`SECURITY_SCANS`: a repo that already runs the CodeQL workflow gets
+nothing from it in CI, so wire it into a local aggregate instead.
+
 ### changelog.mk — per-PR release-notes fragments
 
 Each PR drops a fragment in `changelog.d/`; the fragments are assembled
